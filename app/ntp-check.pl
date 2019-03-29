@@ -5,6 +5,7 @@ use warnings;
 
 #https://www.ntppool.org/user/c2gnfzfctso6pbb9hqsr4
 
+my $time    = localtime;
 my $url     = 'https://www.ntppool.org/';
 my $user    = 'user/';
 my $graph   = 'graph/';
@@ -62,3 +63,4 @@ for my $key ( keys %data ) {
   print "$data{$key}{hostname} ($data{$key}{ip}): $data{$key}{note} ($data{$key}{score})<br>\n";
   print "<img src=\"$data{$key}{graph}\"><br>\n";
 }
+print "<br><br>Last updated: $time<br>";
