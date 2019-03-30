@@ -11,7 +11,7 @@ my $url         = 'https://www.ntppool.org/';
 my $user        = 'user/';
 my $graph       = 'graph/';
 my $png         = '/offset.png';
-my $user_id     = $ARGV[0];
+my $user_id     = $ENV{id};
 
 while ( 1 ) {
   print localtime." checking stats for $user_id\n";
