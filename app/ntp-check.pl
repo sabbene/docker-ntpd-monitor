@@ -36,6 +36,7 @@ for my $line ( @output ) {
     chomp $ip;
 
     $graph_url = "$url$graph$ip$png";
+    ip_link    = "$url/scores/$ip";
   }
   elsif ( $line =~ /^Current\s+score\:/ ) {
     $score = $line;
@@ -54,13 +55,14 @@ for my $line ( @output ) {
     $data{$ip}{"hostname"} = $hostname;
     $data{$ip}{"ip"}       = $ip;
     $data{$ip}{"graph"}    = $graph_url;
+    $data{$ip}{ip_link}   = $ip_link;
     $data{$ip}{"score"}    = $score;
     $data{$ip}{"note"}     = $note;
   }
 }
 
 for my $key ( keys %data ) {
-  print "$data{$key}{hostname} ($data{$key}{ip}): $data{$key}{note} ($data{$key}{score})<br>\n";
-  print "<img src=\"$data{$key}{graph}\"><br>\n";
+  print "$data{$key}{hostname} (<a href=$data{$key}{ip_link}>$data{$key}{ip}</a>): $data{$key}{note} ($data{$key}{score})<br>\n";
+  print "<a href=$data{$key}{ip_link}><img src=\"$data{$key}{graph}\"></a><br>\n";
 }
 print "<br><br>Last updated: $time<br>";
