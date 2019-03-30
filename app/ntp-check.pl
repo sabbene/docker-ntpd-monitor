@@ -3,67 +3,78 @@
 use strict;
 use warnings;
 
-#https://www.ntppool.org/user/c2gnfzfctso6pbb9hqsr4
+print localtime." Starting $0\n";
 
-my $time    = localtime;
-my $url     = 'https://www.ntppool.org/';
-my $user    = 'user/';
-my $graph   = 'graph/';
-my $png     = '/offset.png';
-my $user_id = $ARGV[0];
+my $time        = localtime;
+my $output_file = '/html/ntpd/index.html';
+my $url         = 'https://www.ntppool.org/';
+my $user        = 'user/';
+my $graph       = 'graph/';
+my $png         = '/offset.png';
+my $user_id     = $ARGV[0];
 
-my @output=qx(curl -s "$url$user$user_id");
-
-my %data;
-
-my $hostname;
-my $ip;
-my $graph_url;
-my $ip_link;
-my $score;
-my $note;
-
-for my $line ( @output ) {
-  if ( $line =~ /^Hostname\:/ ) {
-    $hostname = $line;
-    $hostname =~ s/Hostname:\s+.*?\>(.*?)\<.*/$1/;
-
-    chomp $hostname;
-  }
-  elsif ( $line =~ /^IP\:/ ) {
-    $ip = $line;
-    $ip =~ s/IP\:\s+.*?\"\>(.*?)\<.*$/$1/;
-
-    chomp $ip;
-
-    $graph_url = "$url$graph$ip$png";
-    $ip_link    = $url."scores/".$ip;
-  }
-  elsif ( $line =~ /^Current\s+score\:/ ) {
-    $score = $line;
-    $score =~ s/Current\s+score\:\s+.*?\>(.*?)\<.*$/$1/;
-
-    chomp $score;
-
-    if ( $score < 10 ) {
-        $note = 'CRITICAL: score too low for pool';
+while ( 1 ) {
+  print localtime." checking stats for $user_id\n";
+  my @output = qx(curl -s "$url$user$user_id");
+  
+  my %data;
+  my $hostname;
+  my $ip;
+  my $graph_url;
+  my $ip_link;
+  my $score;
+  my $note;
+  
+  for my $line ( @output ) {
+    if ( $line =~ /^Hostname\:/ ) {
+      $hostname = $line;
+      $hostname =~ s/Hostname:\s+.*?\>(.*?)\<.*/$1/;
+  
+      chomp $hostname;
     }
-    else {
-        $note = 'OK: host in pool';
+    elsif ( $line =~ /^IP\:/ ) {
+      $ip = $line;
+      $ip =~ s/IP\:\s+.*?\"\>(.*?)\<.*$/$1/;
+  
+      chomp $ip;
+  
+      $graph_url = "$url$graph$ip$png";
+      $ip_link    = $url."scores/".$ip;
+    }
+    elsif ( $line =~ /^Current\s+score\:/ ) {
+      $score = $line;
+      $score =~ s/Current\s+score\:\s+.*?\>(.*?)\<.*$/$1/;
+  
+      chomp $score;
+  
+      if ( $score < 10 ) {
+          $note = 'CRITICAL: score too low for pool';
+	  print localtime." $ip score is too low for pool ($score)\n";
+      }
+      else {
+          $note = 'OK: host in pool';
+	  print localtime." $ip is in pool ($score)\n";
+      }
+    }
+    elsif ( $line =~ /noscript/ ) {
+      $data{$ip}{"hostname"} = $hostname;
+      $data{$ip}{"ip"}       = $ip;
+      $data{$ip}{"graph"}    = $graph_url;
+      $data{$ip}{ip_link}    = $ip_link;
+      $data{$ip}{"score"}    = $score;
+      $data{$ip}{"note"}     = $note;
     }
   }
-  elsif ( $line =~ /noscript/ ) {
-    $data{$ip}{"hostname"} = $hostname;
-    $data{$ip}{"ip"}       = $ip;
-    $data{$ip}{"graph"}    = $graph_url;
-    $data{$ip}{ip_link}   = $ip_link;
-    $data{$ip}{"score"}    = $score;
-    $data{$ip}{"note"}     = $note;
-  }
-}
 
-for my $key ( keys %data ) {
-  print "$data{$key}{hostname} (<a href=$data{$key}{ip_link}>$data{$key}{ip}</a>): $data{$key}{note} ($data{$key}{score})<br>\n";
-  print "<a href=$data{$key}{ip_link}><img src=\"$data{$key}{graph}\"></a><br>\n";
+  open(my $fh, ">", $output_file) or die (localtime." Cannot open $output_file: $!");
+
+  for my $key ( keys %data ) {
+    print $fh "$data{$key}{hostname} (<a href=$data{$key}{ip_link}>$data{$key}{ip}</a>): $data{$key}{note} ($data{$key}{score})<br>\n";
+    print $fh "<a href=$data{$key}{ip_link}><img src=\"$data{$key}{graph}\"></a><br>\n";
+  }
+  print $fh "<br><br>Last updated: $time<br>";
+
+  close ($fh);
+
+  sleep 900;
 }
-print "<br><br>Last updated: $time<br>";

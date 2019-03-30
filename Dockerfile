@@ -5,4 +5,4 @@ RUN yum -y install perl
 
 CMD  "mkdir /app" 
 
-CMD "/app/start.sh" 
+CMD "/app/ntp-check.pl" 
