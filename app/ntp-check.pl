@@ -37,7 +37,7 @@ for my $line ( @output ) {
     chomp $ip;
 
     $graph_url = "$url$graph$ip$png";
-    $ip_link    = "$url/scores/$ip";
+    $ip_link    = $url."scores/".$ip;
   }
   elsif ( $line =~ /^Current\s+score\:/ ) {
     $score = $line;
